@@ -7,7 +7,6 @@ use std::io::Write;
 use std::io::Read;
 use std::env;
 
-
 pub struct PwdCommand;
 pub struct CdCommand;
 pub struct LsCommand;
@@ -58,11 +57,26 @@ impl CommandExecutor for CdCommand {
 
 impl CommandExecutor for LsCommand {
     fn execute(&self, args: &[String]) -> Result<(), ShellError> {
-        // TODO: Implement ls command with flags:
-        // - -a: show hidden files
-        // - -l: long format (permissions, size, dates)
-        // - -F: add file type indicators
-        todo!("Implement ls command")
+        let mut current_dir = fs
+            ::read_dir(".")?
+            .map(|res| res.map(|e| e.path()))
+            .collect::<Result<Vec<_>, io::Error>>()?;
+
+        current_dir.sort();
+        let len = current_dir.len();
+        for (i, entry) in current_dir.iter().enumerate() {
+            let path_str = entry.display().to_string();
+            let cleaned = path_str.strip_prefix("./").unwrap_or(&path_str);
+            if !cleaned.starts_with(".") {
+                if i + 1 == len {
+                    print!("{}", cleaned);
+                } else {
+                    print!("{} ", cleaned);
+                }
+            }
+        }
+        println!();
+        Ok(())
     }
 
     fn help(&self) -> &str {
